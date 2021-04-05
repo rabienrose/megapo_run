@@ -580,7 +580,6 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
 //
 //                }
 //            }
-                videoPlaySpd=3;
                 if (videoPlaySpd < minSpeed) {
                     videoPlayer.pause();
                 } else {

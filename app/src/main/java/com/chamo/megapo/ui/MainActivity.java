@@ -144,7 +144,6 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
             @Override
             public void onCompleted() {
                 try {
-                    com.chamo.megapo.utils.GlobalFunction.showToast("播放完成");
                     Media media_next = new Media();
                     media_next.setUnlock("1");
                     int cur_video_ind = preferences.getInt("cur_video_ind", 0);

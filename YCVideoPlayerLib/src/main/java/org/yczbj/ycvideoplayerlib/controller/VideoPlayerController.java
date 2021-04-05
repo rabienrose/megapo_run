@@ -791,8 +791,8 @@ public class VideoPlayerController extends AbsVideoPlayerController implements V
     private void stateCompleted() {
         cancelUpdateProgressTimer();
         setTopBottomVisible(false);
-        mImage.setVisibility(View.VISIBLE);
-        mCompleted.setVisibility(View.VISIBLE);
+//        mImage.setVisibility(View.VISIBLE);
+//        mCompleted.setVisibility(View.VISIBLE);
         //设置播放完成的监听事件
         if(mOnCompletedListener!=null){
             mOnCompletedListener.onCompleted();

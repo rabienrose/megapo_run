@@ -17,7 +17,6 @@ import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.*;
 import android.widget.*;
-import com.hb.dialog.dialog.LoadingDialog;
 import com.chamo.megapo.R;
 import org.yczbj.ycvideoplayerlib.db.DBOpenHelper;
 import org.yczbj.ycvideoplayerlib.model.Music;
@@ -45,7 +44,6 @@ import java.util.List;
 @ContentView(R.layout.activity_main)
 public class MainActivity extends ManageFragmentActivity implements View.OnClickListener, SensorEventListener {
     private static final String TAG = MainActivity.class.getClass().getSimpleName();
-    private LoadingDialog loadingDialog;
     private long exitTime;
     private MediaPlayer mediaPlayer = null;
     private VideoPlayer videoPlayer = null;
@@ -218,9 +216,6 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
     }
 
     private void getData() {
-        loadingDialog = new LoadingDialog(this);
-        loadingDialog.setMessage("获取数据...");
-        loadingDialog.show();
         RequestParams params = new RequestParams(GlobalVariables.VIDEOURl);
         x.http().get(params, new Callback.CommonCallback<String>() {
             @Override
@@ -304,9 +299,6 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
 
     Handler handler = new Handler() {
         public void handleMessage(Message msg) {
-            if (loadingDialog != null) {
-                loadingDialog.dismiss();
-            }
             switch (msg.what) {
                 case 0:
                     play(dbOpenHelper.getAllData().get(0), 0);

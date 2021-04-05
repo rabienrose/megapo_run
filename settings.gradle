@@ -1,2 +1,2 @@
-include ':app', ':dialogLib', 'niceimageview',':YCVideoPlayerLib'
+include ':app',':YCVideoPlayerLib'
 

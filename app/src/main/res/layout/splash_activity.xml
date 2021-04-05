@@ -7,7 +7,7 @@
         >
     <Button
             android:id="@+id/jump"
-            android:layout_marginTop="@dimen/dp_20"
+            android:layout_marginTop="20dp"
             android:background="@drawable/btn_normal"
             android:layout_alignParentRight="true"
             android:alpha="0.3"
@@ -28,13 +28,13 @@
             android:background="@color/white"
             android:visibility="gone"
             android:id="@+id/start"
-            android:layout_width="@dimen/dp_150"
-            android:layout_height="@dimen/dp_150"
+            android:layout_width="150dp"
+            android:layout_height="150dp"
             android:scaleType="centerCrop"
-            android:layout_marginRight="@dimen/dp_42"
+            android:layout_marginRight="42dp"
             android:layout_alignParentBottom="true"
             android:layout_alignParentRight="true"
-            android:layout_marginBottom="@dimen/dp_105"
+            android:layout_marginBottom="105dp"
             android:src="@mipmap/start"/>
 
 

@@ -80,8 +80,6 @@ dependencies {
     implementation 'org.xutils:xutils:3.5.0'
     implementation 'com.library.tangxiaolv:telegramgallery:1.0.5'
     implementation 'com.android.support:multidex:1.0.3'
-    implementation project(':niceimageview')
-    implementation project(':dialogLib')
     implementation project(':YCVideoPlayerLib')
     configurations.all {
         resolutionStrategy {

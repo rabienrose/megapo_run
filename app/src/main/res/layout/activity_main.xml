@@ -9,7 +9,7 @@
             android:id="@+id/relative_layout"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
-        <org.yczbj.ycvideoplayerlib.player.VideoPlayer
+        <com.chamo.megapo.player.VideoPlayer
                 android:id="@+id/video_player"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -58,29 +58,6 @@
                 android:layout_height="@dimen/x40"/>
 
     </RelativeLayout>
-    <LinearLayout
-            android:visibility="gone"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="horizontal">
-        <ImageView
-                android:visibility="gone"
-                android:id="@+id/left"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:scaleType="centerCrop"
-                android:layout_gravity="center_vertical"
-                android:src="@mipmap/left"/>
-
-        <ImageView
-                android:visibility="gone"
-                android:id="@+id/right"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:scaleType="centerCrop"
-                android:layout_gravity="center_vertical"
-                android:src="@mipmap/right"/>
-    </LinearLayout>
 
     <LinearLayout
             android:layout_width="match_parent"
@@ -88,85 +65,6 @@
             android:background="@android:color/transparent"
             android:orientation="horizontal"
             android:visibility="invisible">
-
-        <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                tools:visibility="visible">
-
-            <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_marginLeft="40dp"
-                    android:layout_marginTop="20dp"
-                    android:layout_marginRight="40dp"
-                    tools:visibility="visible">
-
-                <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center_vertical"
-                        android:layout_marginLeft="5dp"
-                        android:layout_marginRight="10dp"
-                        android:text="灵敏度:"
-                        android:textColor="@android:color/holo_red_dark"/>
-
-                <View
-                        android:layout_width="1px"
-                        android:layout_height="match_parent"
-                        android:layout_marginLeft="5dp"
-                        android:layout_marginRight="5dp"/>
-
-                <EditText
-                        android:id="@+id/et_delay"
-                        android:layout_width="100dp"
-                        android:layout_height="48dp"
-                        android:layout_gravity="center_vertical"
-                        android:background="@drawable/gray_border"
-                        android:hint=""
-                        android:inputType="number|numberDecimal"
-                        android:textColor="@android:color/holo_red_dark"
-                        android:textColorHint="#999999"/>
-            </LinearLayout>
-
-            <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="40dp"
-                    android:layout_marginTop="20dp"
-                    android:layout_marginRight="40dp"
-                    tools:visibility="visible">
-
-                <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center_vertical"
-                        android:layout_marginLeft="5dp"
-                        android:layout_marginRight="10dp"
-                        android:text="速度系数:"
-                        android:textColor="@android:color/holo_red_dark"/>
-
-                <View
-                        android:layout_width="1px"
-                        android:layout_height="match_parent"
-                        android:layout_marginLeft="5dp"
-                        android:layout_marginRight="5dp"/>
-
-                <EditText
-                        android:id="@+id/et_spd"
-                        android:layout_width="99dp"
-                        android:layout_height="48dp"
-                        android:layout_gravity="center_vertical"
-                        android:background="@drawable/gray_border"
-                        android:hint=""
-                        android:inputType="number|numberDecimal"
-                        android:textColor="@android:color/holo_red_dark"
-                        android:textColorHint="#999999"/>
-            </LinearLayout>
-
-        </LinearLayout>
 
         <TextView
                 android:id="@+id/tv_log"

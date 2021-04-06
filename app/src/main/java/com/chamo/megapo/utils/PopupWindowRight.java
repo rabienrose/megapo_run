@@ -2,9 +2,7 @@ package com.chamo.megapo.utils;
 
 import android.animation.ObjectAnimator;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.res.Resources;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.OrientationHelper;
@@ -13,20 +11,13 @@ import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.PopupWindow;
-import android.widget.Toast;
 import com.chamo.megapo.R;
-import com.chamo.megapo.adapter.NormalAdapter;
 import com.chamo.megapo.adapter.RecyclerItemClickListener;
-import org.yczbj.ycvideoplayerlib.model.Media;
 import com.chamo.megapo.ui.MainActivity;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class PopupWindowRight extends PopupWindow {
     private static final String TAG = "PopupWindowRight";
     private RecyclerView recyclerView;
-    private NormalAdapter recycleAdapter;
     private final View view;
     private Context context;
     public static MainActivity mMainActivity = null;
@@ -51,22 +42,22 @@ public class PopupWindowRight extends PopupWindow {
     }
 
     private void initData() {
-        LinearLayoutManager layoutManager = new LinearLayoutManager(context);
-        recyclerView.setLayoutManager(layoutManager);
-        layoutManager.setOrientation(OrientationHelper.HORIZONTAL);
-        recyclerView.setAdapter(recycleAdapter);
-        recyclerView.setItemAnimator(new DefaultItemAnimator());
-        recyclerView.addOnItemTouchListener(new RecyclerItemClickListener(context, new RecyclerItemClickListener.OnItemClickListener() {
-            @Override
-            public void onItemClick(View view, int position) {
-            }
-            @Override
-            public void onLongClick(View view, int position) {
-            }
-            @Override
-            public void onScroll(View view, int position) {
-            }
-        }));
+//        LinearLayoutManager layoutManager = new LinearLayoutManager(context);
+//        recyclerView.setLayoutManager(layoutManager);
+//        layoutManager.setOrientation(OrientationHelper.HORIZONTAL);
+//        recyclerView.setAdapter(recycleAdapter);
+//        recyclerView.setItemAnimator(new DefaultItemAnimator());
+//        recyclerView.addOnItemTouchListener(new RecyclerItemClickListener(context, new RecyclerItemClickListener.OnItemClickListener() {
+//            @Override
+//            public void onItemClick(View view, int position) {
+//            }
+//            @Override
+//            public void onLongClick(View view, int position) {
+//            }
+//            @Override
+//            public void onScroll(View view, int position) {
+//            }
+//        }));
     }
 
     @Override
@@ -89,16 +80,16 @@ public class PopupWindowRight extends PopupWindow {
         recyclerView = (RecyclerView) view.findViewById(R.id.recycler_view);
     }
 
-    public void setData(List<Media> mediaList, MainActivity mainActivity, int scroll_pos) {
-        recycleAdapter = new NormalAdapter(mediaList,context,mainActivity);
-        recycleAdapter.setOnItemClickListener(new NormalAdapter.OnItemClickListener() {
-            @Override
-            public void onClick(int position) {
-                Media media = mediaList.get(position);
-                mMainActivity.play(media,1);
-            }
-        });
-        initData();
-        recyclerView.getLayoutManager().scrollToPosition(scroll_pos);
-    }
+//    public void setData(List<Media> mediaList, MainActivity mainActivity, int scroll_pos) {
+//        recycleAdapter = new NormalAdapter(mediaList,context,mainActivity);
+//        recycleAdapter.setOnItemClickListener(new NormalAdapter.OnItemClickListener() {
+//            @Override
+//            public void onClick(int position) {
+//                Media media = mediaList.get(position);
+//                mMainActivity.play(media,1);
+//            }
+//        });
+//        initData();
+//        recyclerView.getLayoutManager().scrollToPosition(scroll_pos);
+//    }
 }

@@ -9,6 +9,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.Bundle;
 import android.os.Message;
@@ -16,30 +17,36 @@ import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.*;
 import android.widget.*;
+
+import com.bumptech.glide.Glide;
 import com.chamo.megapo.R;
+import com.chamo.megapo.constant.ConstantKeys;
+import com.chamo.megapo.listener.OnCompletedListener;
+import com.chamo.megapo.listener.OnPlayOrPauseListener;
+import com.chamo.megapo.model.LevelData;
 import com.chamo.megapo.ui.base.ManageFragmentActivity;
 import com.chamo.megapo.utils.OssService;
 import com.chamo.megapo.utils.GlobalVariables;
-import com.chamo.megapo.utils.PopupWindowRight;
 import com.chamo.megapo.utils.HandlerUtils;
 import com.chamo.megapo.utils.GlobalFunction;
 import com.chamo.megapo.utils.ScreenManager;
-import org.xutils.common.Callback;
-import org.xutils.http.RequestParams;
 import org.xutils.view.annotation.ContentView;
 import org.xutils.x;
 import com.chamo.megapo.player.VideoPlayer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import okhttp3.internal.Internal;
 
 @ContentView(R.layout.activity_main)
 public class MainActivity extends ManageFragmentActivity implements View.OnClickListener, SensorEventListener {
-    private static final String TAG = MainActivity.class.getClass().getSimpleName();
     private long exitTime;
     private MediaPlayer mediaPlayer = null;
     private VideoPlayer videoPlayer = null;
-    private int musicIndex = 0;
     private boolean isFirst = true;
     public SensorManager sm;
     private Sensor acceleromererSensor;
@@ -56,10 +63,7 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
     private ImageView imageNext;
     private View root_view;
     private List<ImageView> buttonItems = new ArrayList<ImageView>(3);
-    // 标识当前按钮弹出与否，1代表已经未弹出，-1代表已弹出
     private int flag = 1;
-    private PopupWindowRight popupWindowRight;
-    private boolean popuTag = false;
     private HandlerUtils handlerUtils;
     private SharedPreferences preferences;
     private float t_imu_intense;
@@ -67,7 +71,20 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
     private float t_v_speed;
     private int stats_count=0;
     private ArrayList<View> level_views=new ArrayList<>();
+    private Timer timer = new Timer();
+    private HashMap<Integer,Integer> next_level_ids=new HashMap<>();
 
+    class UpdatTask extends TimerTask {
+        public void run() {
+            runOnUiThread(new Runnable() {
+                public void run() {
+                    if (videoPlayer.getCurrentState()==ConstantKeys.CurrentState.STATE_PLAYING){
+                        preferences.edit().putLong("cur_v_pos",videoPlayer.getCurrentPosition()).commit();
+                    }
+                }
+            });
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,44 +93,26 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
             preferences = getSharedPreferences("state", MODE_PRIVATE);
             x.view().inject(this);
             initView();
-            initMusic();
             initData();
             initListenter();
+            int musicIndex=preferences.getInt("cur_music_id",0);
+            playMusic(OssService.musics.get(musicIndex).name);
+            play(true);
+            TimerTask update_task = new UpdatTask();
+            timer.scheduleAtFixedRate(update_task, 1000, 1000);
         }catch (Exception e) {
             OssService.appendErr(e);
         }
     }
 
-    private void initMusic() {
-        musicIndex = preferences.getInt("cur_music_ind",0);
-    }
-
-    public MainActivity() {
-        popupWindowRight.mMainActivity = this;
-    }
-
     private void initData() {
         handlerUtils = new HandlerUtils(this);
-        popupWindowRight = new PopupWindowRight(MainActivity.this);
         buttonItems.add(imageVoice);
         buttonItems.add(imageNext);
         tvLog.setMovementMethod(ScrollingMovementMethod.getInstance());
         sm = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         acceleromererSensor = sm.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
         sm.registerListener(this, acceleromererSensor, SensorManager.SENSOR_DELAY_NORMAL);
-//        if (dbOpenHelper.getAllData().size() == 0) {
-//            getData();
-//        } else {
-//            int videoIndex = preferences.getInt("cur_video_ind",0);
-//            ArrayList<Media> allData = dbOpenHelper.getAllData();
-//            if (videoIndex == 0) {
-//                play(allData.get(0), 0);
-//            }else {
-//                play(allData.get(videoIndex - 1), 0);
-//            }
-//            mediaList.addAll(allData);
-//        }
-        getDataMusic();
     }
 
     private void initListenter() {
@@ -122,61 +121,46 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
         imageNext.setOnClickListener(this);
         imageVideo.setOnClickListener(this);
         videoPlayer.setOnClickListener(this);
-//        controller.setOnCompletedListener(new OnCompletedListener() {
-//            @Override
-//            public void onCompleted() {
-//                try {
-//                    Media media_next = new Media();
-//                    media_next.setUnlock("1");
-//                    int cur_video_ind = preferences.getInt("cur_video_ind", 0);
-//                    media_next.setId(cur_video_ind + 1);
-//                    dbOpenHelper.update(media_next);
-//                    ArrayList<Media> allData = dbOpenHelper.getAllData();
-//                    Media media_past = allData.get(cur_video_ind - 1);
-//                    media_past.setNum(String.valueOf(Integer.parseInt(media_past.getNum()) + 100));
-//                    media_past.setPosition("1");
-//                    media_past.setId(cur_video_ind);
-//                    dbOpenHelper.update(media_past);
-//                    ArrayList<Media> allData1 = dbOpenHelper.getAllData();
-//                    allData1.get(0).getNum();
-//                    mediaList.clear();
-//                    mediaList.addAll(allData);
-//                    String end_str = "done_video|";
-//                    end_str = end_str + media_past.getBareName() + "|";
-//                    end_str = end_str + t_imu_intense / stats_count + "|";
-//                    end_str = end_str + t_speed / stats_count + "|";
-//                    end_str = end_str + t_v_speed / stats_count + "|";
-//                    OssService.appendLog(end_str, false);
-//                    show_v_list(true);
-//                }catch (Exception e) {
-//                    OssService.appendErr(e);
-//                }
-//            }
-//        });
-//        controller.setOnPlayOrPauseListener(new OnPlayOrPauseListener() {
-//            @Override
-//            public void onPlayOrPauseClick(boolean isPlaying) {
-//                try {
-//                    Log.d("chamo1","setOnPlayOrPauseListener");
-//                    imageMusic.setVisibility(View.VISIBLE);
-//                    imageVideo.setVisibility(View.VISIBLE);
-//                }catch (Exception e) {
-//                    OssService.appendErr(e);
-//                }
-//            }
-//        });
-//        controller.setOnTouchListener(new View.OnTouchListener() {
-//            @Override
-//            public boolean onTouch(View v, MotionEvent event) {
-//                try {
-//                    Event(0);
-//                    popuTag = false;
-//                }catch (Exception e) {
-//                    OssService.appendErr(e);
-//                }
-//                return false;
-//            }
-//        });
+        videoPlayer.setOnCompletedListener(new OnCompletedListener() {
+            @Override
+            public void onCompleted() {
+                try {
+                    int cur_video_id = preferences.getInt("cur_video_id",1);
+                    String end_str = "done_video|";
+                    end_str = end_str + OssService.levels.get(cur_video_id).name + "|";
+                    end_str = end_str + t_imu_intense / stats_count + "|";
+                    end_str = end_str + t_speed / stats_count + "|";
+                    end_str = end_str + t_v_speed / stats_count + "|";
+                    OssService.appendLog(end_str, false);
+                    show_v_list(true);
+                    int count = preferences.getInt(cur_video_id+"_count",0);
+                    preferences.edit().putLong("cur_v_pos", 0);
+                    LevelData data = OssService.levels.get(cur_video_id);
+                    for (int i=0; i<data.next_levs_id.size(); i++){
+                        int count1 = preferences.getInt(data.next_levs_id.get(i)+"_count",-1);
+                        if (count1==-1){
+                            preferences.edit().putInt(data.next_levs_id.get(i)+"_count", 0);
+                        }
+                    }
+                    preferences.edit().putInt(cur_video_id+"_count", count).commit();
+                }catch (Exception e) {
+                    OssService.appendErr(e);
+                }
+            }
+        });
+        videoPlayer.setOnPlayOrPauseListener(new OnPlayOrPauseListener() {
+            @Override
+            public void onPlayOrPauseClick(boolean isPlaying) {
+                try {
+                    if (isPlaying){
+                        imageMusic.setVisibility(View.VISIBLE);
+                        imageVideo.setVisibility(View.VISIBLE);
+                    }
+                }catch (Exception e) {
+                    OssService.appendErr(e);
+                }
+            }
+        });
     }
 
     protected void initView() {
@@ -190,111 +174,12 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
     }
 
     private void next() {
-        musicIndex++;
-//        musicIndex = musicIndex % musicList.size();
-//        playMusic(music);
+        int cur_music_id = preferences.getInt("cur_music_id",1);
+        cur_music_id++;
+        cur_music_id = cur_music_id % OssService.musics.size();
+        playMusic(OssService.musics.get(cur_music_id).name);
+        preferences.edit().putInt("cur_music_id",cur_music_id).commit();
     }
-
-    private void getData() {
-        RequestParams params = new RequestParams(GlobalVariables.VIDEOURl);
-        x.http().get(params, new Callback.CommonCallback<String>() {
-            @Override
-            public void onSuccess(String result) {
-                try {
-//                    String[] ary = result.split("\n");
-//                    for (String item : ary) {
-//                        String[] ay = item.split(",");
-//                        Media media = new Media();
-//                        media.setVideoName(GlobalVariables.VIDEO + ay[0]);
-//                        media.setVideoImage(GlobalVariables.COVER + ay[1]);
-//                        media.setUnlock("0");
-//                        media.setPercentage("0");
-//                        media.setNum("0");
-//                        mediaList.add(media);
-//                    }
-//                    for (int i = 0; i < mediaList.size(); i++) {
-//                        if (i == 0) {
-//                            mediaList.get(i).setUnlock("1");
-//                        }
-//                        dbOpenHelper.add(mediaList.get(i));
-//                    }
-//                    handler.sendEmptyMessage(0);
-                }catch (Exception e) {
-                    OssService.appendErr(e);
-                }
-            }
-
-            @Override
-            public void onError(Throwable ex, boolean isOnCallback) {
-                OssService.appendLog("fetch_video_list_err", false);
-            }
-
-            @Override
-            public void onCancelled(CancelledException cex) {
-                OssService.appendLog("fetch_video_list_cancel", false);
-            }
-
-            @Override
-            public void onFinished() {
-                OssService.appendLog("fetch_video_list_done", false);
-            }
-        });
-    }
-
-    private void getDataMusic() {
-        RequestParams params = new RequestParams(com.chamo.megapo.utils.GlobalVariables.MUSICURl);
-        x.http().get(params, new Callback.CommonCallback<String>() {
-            @Override
-            public void onSuccess(String result) {
-                try {
-//                    String[] ary = result.split("\n");
-//                    for (String item : ary) {
-//                        Music media = new Music();
-//                        media.setMusic(com.chamo.megapo.utils.GlobalVariables.MUSIC + item);
-//                        musicList.add(media);
-//                    }
-//                    handler.sendEmptyMessage(2);
-                }catch (Exception e) {
-                    OssService.appendErr(e);
-                }
-            }
-
-            @Override
-            public void onError(Throwable ex, boolean isOnCallback) {
-                OssService.appendLog("fetch_music_list_err", false);
-            }
-
-            @Override
-            public void onCancelled(CancelledException cex) {
-                OssService.appendLog("fetch_music_list_cancel", false);
-            }
-
-            @Override
-            public void onFinished() {
-                OssService.appendLog("fetch_music_list_done", false);
-            }
-        });
-    }
-
-
-    Handler handler = new Handler() {
-        public void handleMessage(Message msg) {
-//            switch (msg.what) {
-//                case 0:
-//                    play(dbOpenHelper.getAllData().get(0), 0);
-//                    break;
-//                case 1:
-//                    GlobalFunction.showToast(MainActivity.this, msg.obj.toString());
-//                    break;
-//                case 2:
-//                    Music music = musicList.get(musicIndex);
-//                    playMusic(music);
-//                    break;
-//                default:
-//                    break;
-//            }
-        }
-    };
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -332,60 +217,58 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
         }
     }
 
-//    public void play(Media media, int i) {
-//        try {
-//            String barename = media.getBareName();
-//            String full_path=media.getVideoName();
-//            OssService.appendLog("video_start|"+barename,false);
-//            Long last_upload_time=preferences.getLong("last_upload",0);
-//            Long cur_timestamp = System.currentTimeMillis()/1000;
-//            if ((cur_timestamp - last_upload_time)>3600*24){
-//                preferences.edit().putLong("last_upload",cur_timestamp).commit();
-//                String uuid=preferences.getString("uuid","");
-//                OssService.upload_file(getApplicationContext(), uuid);
-//            }
-//            t_v_speed=0;
-//            t_speed=0;
-//            t_imu_intense=0;
-//            stats_count=0;
-//            videoPlayer.setUp(full_path, null);
-//            imageMusic.setVisibility(View.GONE);
-//            imageVideo.setVisibility(View.GONE);
-//            show_v_list(false);
-//
-//            if (!Empty.isEmpty(media.getPosition())) {
-//                videoPlayer.start(Long.parseLong(media.getPosition()));
-//            } else {
-//                videoPlayer.start(0);
-//            }
-//            preferences.edit().putInt("cur_video_ind",media.getId()).commit();
-//            if (i == 1) {
-//                videoPlayer.playNew();
-//            }
-//        } catch (Exception e) {
-//            OssService.appendErr(e);
-//        }
-//    }
-//
-//    private void playMusic(Music media) {
-//        preferences.edit().putInt("cur_music_ind",musicIndex).commit();
-//        Uri playerUri = Uri.parse(media.getMusic());
-//        if (mediaPlayer != null) {
-//            mediaPlayer.stop();
-//        }
-//        mediaPlayer = MediaPlayer.create(MainActivity.this, playerUri);
-//        Log.e(TAG, "playMusic: " + playerUri);
-//        int music_on=preferences.getInt("music_on", 1);
-//        if (music_on == 1) {
-//            mediaPlayer.setVolume(1, 1);
-//            imageVoice.setBackgroundResource(R.mipmap.voice);
-//        } else {
-//            mediaPlayer.setVolume(0, 0);
-//            imageVoice.setBackgroundResource(R.mipmap.voice_un);
-//        }
-//        mediaPlayer.start();
-//        mediaPlayer.setLooping(true);
-//    }
+    public void play(boolean first_play) {
+        try {
+            int levelIndex = preferences.getInt("cur_video_id",-1);
+            if (levelIndex==-1){
+                levelIndex=4;
+                preferences.edit().putInt("cur_video_id",levelIndex).commit();
+            }
+            String barename = OssService.levels.get(levelIndex).name;
+            String full_path=GlobalVariables.VIDEO+barename ;
+            OssService.appendLog("video_start|"+barename,false);
+            Long last_upload_time=preferences.getLong("last_upload",0);
+            Long cur_timestamp = System.currentTimeMillis()/1000;
+            if ((cur_timestamp - last_upload_time)>3600*24){
+                preferences.edit().putLong("last_upload",cur_timestamp).commit();
+                String uuid=preferences.getString("uuid","");
+                OssService.upload_file(getApplicationContext(), uuid);
+            }
+            t_v_speed=0;
+            t_speed=0;
+            t_imu_intense=0;
+            stats_count=0;
+            videoPlayer.setUp(full_path, null);
+            imageMusic.setVisibility(View.GONE);
+            imageVideo.setVisibility(View.GONE);
+            show_v_list(false);
+            Long cur_play_pos = preferences.getLong("cur_v_pos",0);
+            videoPlayer.start(cur_play_pos);
+            if (!first_play) {
+                videoPlayer.playNew();
+            }
+        } catch (Exception e) {
+            OssService.appendErr(e);
+        }
+    }
+
+    private void playMusic(String music_name) {
+        Uri playerUri = Uri.parse(GlobalVariables.MUSIC+ music_name);
+        if (mediaPlayer != null) {
+            mediaPlayer.stop();
+        }
+        mediaPlayer = MediaPlayer.create(MainActivity.this, playerUri);
+        int music_on=preferences.getInt("music_on", 1);
+        if (music_on == 1) {
+            mediaPlayer.setVolume(1, 1);
+            imageVoice.setBackgroundResource(R.mipmap.voice);
+        } else {
+            mediaPlayer.setVolume(0, 0);
+            imageVoice.setBackgroundResource(R.mipmap.voice_un);
+        }
+        mediaPlayer.start();
+        mediaPlayer.setLooping(true);
+    }
 
     @Override
     protected void onDestroy() {
@@ -442,8 +325,7 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
     public void Event(int messageEvent) {
         flag = -1;
         buttonAnimation(buttonItems);
-        popupWindowRight.dismiss();
-        popuTag = false;
+        show_v_list(false);
     }
 
     @Override
@@ -463,36 +345,97 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
     }
 
     private void show_v_list(Boolean b_show){
-        WindowManager wm = (WindowManager) this
-                .getSystemService(Context.WINDOW_SERVICE);
-        int width = wm.getDefaultDisplay().getWidth();
-        int height = wm.getDefaultDisplay().getHeight();
-        int item_w_px=dp2px(getApplicationContext(), 148);
-        int item_h_px=dp2px(getApplicationContext(), 200);
-        HashMap<Integer, ArrayList<Integer>> item_sizes = new HashMap<>();
-        ArrayList<Integer> s1=new ArrayList<>();
-        s1.add(width/2-item_w_px/2);
-        item_sizes.put(1,s1);
-        ArrayList<Integer> s2=new ArrayList<>();
-        s2.add(width/2-item_w_px);
-        s2.add(width/2);
-        item_sizes.put(2,s2);
-        ArrayList<Integer> s3=new ArrayList<>();
-        s3.add(width/2-item_w_px-item_w_px/2);
-        s3.add(width/2-item_w_px/2);
-        s3.add(width/2+item_w_px/2);
-        item_sizes.put(3,s3);
-
-        int item_size=3;
         if (b_show){
-            for (int i=0; i<item_size; i++){
+            WindowManager wm = (WindowManager) this
+                    .getSystemService(Context.WINDOW_SERVICE);
+            int width = wm.getDefaultDisplay().getWidth();
+            int height = wm.getDefaultDisplay().getHeight();
+            int item_w_px=dp2px(getApplicationContext(), 148);
+            int item_h_px=dp2px(getApplicationContext(), 200);
+            HashMap<Integer, ArrayList<Integer>> item_sizes = new HashMap<>();
+            ArrayList<Integer> s1=new ArrayList<>();
+            s1.add(width/2-item_w_px/2);
+            item_sizes.put(1,s1);
+            ArrayList<Integer> s2=new ArrayList<>();
+            s2.add(width/2-item_w_px);
+            s2.add(width/2);
+            item_sizes.put(2,s2);
+            ArrayList<Integer> s3=new ArrayList<>();
+            s3.add(width/2-item_w_px-item_w_px/2);
+            s3.add(width/2-item_w_px/2);
+            s3.add(width/2+item_w_px/2);
+            item_sizes.put(3,s3);
+            int cur_video_id = preferences.getInt("cur_video_id",1);
+            LevelData data = OssService.levels.get(cur_video_id);
+            ArrayList<LevelData> out_levs=new ArrayList<>();
+            ArrayList<Integer> out_count=new ArrayList<>();
+            HashMap<Integer,Integer> complete_levs=new HashMap<>();
+            if (data.next_levs_id.size()>3){
+                Map<String,?> keys = preferences.getAll();
+                for (int i=0; i<data.next_levs_id.size(); i++){
+                    Integer count= (Integer) keys.get(data.next_levs_id.get(i)+"_count");
+                    if (count==null){
+                        out_levs.add(OssService.levels.get(data.next_levs_id.get(i)));
+                        out_count.add(-1);
+                    }else{
+                        complete_levs.put(data.next_levs_id.get(i), count);
+                    }
+                    if (out_levs.size()==3){
+                        break;
+                    }
+                }
+                Log.d("chamo1","complete_levs  "+complete_levs.size());
+                if (complete_levs.size()<=3-out_levs.size()){
+                    for (HashMap.Entry<Integer,Integer> entry : complete_levs.entrySet()){
+                        out_levs.add(OssService.levels.get(entry.getKey()));
+                        out_count.add(entry.getValue());
+                    }
+                }else{
+                    List<HashMap.Entry<Integer, Integer>> list = new ArrayList<>(complete_levs.entrySet());
+                    list.sort(HashMap.Entry.comparingByValue());
+                    for (HashMap.Entry<Integer, Integer> entry : list) {
+                        Log.d("chamo1","getKey  "+entry.getKey()+"  "+entry.getValue());
+                        out_levs.add(OssService.levels.get(entry.getKey()));
+                        out_count.add(entry.getValue());
+                        if (out_levs.size()==3){
+                            break;
+                        }
+                    }
+                }
+            }else{
+                for (int i=0; i<data.next_levs_id.size(); i++){
+                    out_levs.add(OssService.levels.get(data.next_levs_id.get(i)));
+                    out_count.add(-1);
+                }
+            }
+            Log.d("chamo1","out_levs.size(): "+out_levs.size());
+            for (int i=0; i<out_levs.size(); i++){
                 RelativeLayout rl = (RelativeLayout)getLayoutInflater().inflate(R.layout.list_item, (ViewGroup) root_view, false);
                 rl.setId(i+1);
                 rl.setOnClickListener(this);
                 ((ViewGroup) root_view).addView(rl);
-                rl.setX(item_sizes.get(item_size).get(i));
+                rl.setX(item_sizes.get(out_levs.size()).get(i));
                 rl.setY(Math.round(height/2.5)-item_h_px/2);
+                for(int index = 0; index < ((ViewGroup) rl).getChildCount(); index++) {
+                    View nextChild = ((ViewGroup) rl).getChildAt(index);
+                    if (nextChild.getId()==R.id.image){
+                        ImageView img_view=(ImageView)nextChild;
+                        String image_url=GlobalVariables.COVER+out_levs.get(i).cover;
+                        Glide.with(getApplicationContext()).load(image_url).into(img_view);
+                    }
+                    if (nextChild.getId()==R.id.text){
+                        TextView text_view=(TextView)nextChild;
+                        String tmp_text="";
+                        if (out_count.get(i)==-1){
+                            tmp_text="未解锁";
+                        }else{
+                            tmp_text = "完成次数： "+out_count.get(i);
+                        }
+                        text_view.setText(tmp_text);
+                    }
+                }
                 level_views.add(rl);
+                next_level_ids.put(rl.getId(), out_levs.get(i).id);
             }
         }else{
             if (level_views.size()>0){
@@ -506,15 +449,22 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
 
     @Override
     public void onClick(View v) {
-        Log.d("chamo1","click: "+v.getId());
         try {
             switch (v.getId()) {
                 case 1:
                 case 2:
                 case 3:
+                    int video_id = preferences.getInt("cur_video_id",0);
+                    LevelData data = OssService.levels.get(video_id);
+                    int count = preferences.getInt(video_id+"_count",-1);
+                    if (count!=-1){
+                        int tmp_lev_id=next_level_ids.get(v.getId());
+                        int chosed_lev = data.next_levs_id.get(tmp_lev_id);
+                        preferences.edit().putInt("cur_video_id", chosed_lev).commit();
+                        show_v_list(false);
+                    }
                     break;
                 case R.id.image_music:
-                    popuTag = false;
                     buttonAnimation(buttonItems);
                     break;
                 case R.id.image_voice:
@@ -581,7 +531,6 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
                     } else {
                         videoPlayer.setSpeed(videoPlaySpd);
                     }
-//                save_video_pos();
                 }
                 t_v_speed = t_v_speed + videoPlaySpd;
                 String log = "speed=" + videoPlaySpd;

@@ -11,6 +11,8 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.v4.content.FileProvider;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
@@ -29,12 +31,15 @@ import org.xutils.http.RequestParams;
 import org.xutils.view.annotation.ContentView;
 import org.xutils.x;
 import java.io.File;
+import java.util.Timer;
+import java.util.TimerTask;
 
 @ContentView(R.layout.splash_activity)
 public class SplashActivity extends ManageActivity {
     ImageView btn;
+    ImageView mMImageView;
     public static Bitmap btp;
-    private ImageView mMImageView;
+    private Timer reset_timer = new Timer();
     int[] mGuidArray = {
             R.mipmap.banner1,
             R.mipmap.banner2,
@@ -44,10 +49,10 @@ public class SplashActivity extends ManageActivity {
     SharedPreferences preferences;
     private ViewPager mGuidViewPager;
     private Button jump;
+    private boolean check_update_ready=false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // TODO Auto-generated method stub
         super.onCreate(savedInstanceState);
         try {
             x.view().inject(this);
@@ -105,6 +110,20 @@ public class SplashActivity extends ManageActivity {
         return ver_id;
     }
 
+    class UpdateResetTask extends TimerTask {
+        public void run() {
+            if (OssService.level_data_ready && OssService.music_data_ready && check_update_ready){
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        btn.setVisibility(View.VISIBLE);
+                        jump.setVisibility(View.VISIBLE);
+                    }
+                });
+                reset_timer.cancel();
+            }
+        }
+    }
+
     private void initData() {
         RequestParams params = new RequestParams(GlobalVariables.CONFIGURl);
         x.http().get(params, new Callback.CommonCallback<String>() {
@@ -120,6 +139,7 @@ public class SplashActivity extends ManageActivity {
                     downloadUpdate();
                     OssService.appendLog("start_download_app|"+GlobalVariables.APPVER+"|"+force_ver_id, false);
                 }
+                check_update_ready=true;
             }
             @Override
             public void onError(Throwable ex, boolean isOnCallback) { }
@@ -131,30 +151,24 @@ public class SplashActivity extends ManageActivity {
         preferences = getSharedPreferences("state", MODE_PRIVATE);
         btn = (ImageView) findViewById(R.id.start);
         jump = (Button) findViewById(R.id.jump);
-//        if (!preferences.getBoolean("isLogin", false)) {
-//            btn.setVisibility(View.GONE);
-//            jump.setVisibility(View.GONE);
-//        }
+        btn.setVisibility(View.GONE);
+        jump.setVisibility(View.GONE);
+        OssService.fetch_level_data();
+        OssService.getDataMusic();
         mGuidViewPager = findViewById(R.id.guid_viewPager);
         mGuidViewPager.setAdapter(new GuidPagerAdapter(mGuidArray,SplashActivity.this, mMImageView, btp));
+        TimerTask updateReset = new UpdateResetTask();
+        reset_timer.scheduleAtFixedRate(updateReset, 500, 500);
     }
 
     private void initListener() {
         mGuidViewPager.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-//                if (position == 0 && preferences.getBoolean("isLogin", false)) {
-//                    jump.setVisibility(View.VISIBLE);
-//                }
             }
 
             @Override
             public void onPageSelected(int position) {
-//                if (position == mGuidViewPager.getAdapter().getCount() - 1) {
-//                    btn.setVisibility(View.VISIBLE);
-//                } else {
-//                    btn.setVisibility(View.INVISIBLE);
-//                }
             }
 
             @Override
@@ -177,7 +191,6 @@ public class SplashActivity extends ManageActivity {
 
     }
     private void start() {
-        preferences.edit().putBoolean("isLogin",true).commit();
         startActivity(new Intent(this,MainActivity.class));
         finish();
     }

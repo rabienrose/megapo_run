@@ -10,7 +10,7 @@ public class GlobalVariables {
 	public final static String VIDEO = BASE_URL+"/phone_sport/video/";
 	public final static String MUSIC = BASE_URL+"/phone_sport/music/";
 	public final static String COVER = BASE_URL+"/phone_sport/cover/";
-	public final static String VIDEOURl = "https://ride-v.oss-accelerate.aliyuncs.com/phone_sport/v_list_v2.txt";
-	public final static String MUSICURl = "https://ride-v.oss-accelerate.aliyuncs.com/phone_sport/m_list_v2.txt";
-	public final static String CONFIGURl = "https://ride-v.oss-accelerate.aliyuncs.com/config/ver.txt";
+	public final static String VIDEOURl = BASE_URL+"/phone_sport/v_list_v3.txt";
+	public final static String MUSICURl = BASE_URL+"/phone_sport/m_list_v2.txt";
+	public final static String CONFIGURl = BASE_URL+"/config/ver.txt";
 }

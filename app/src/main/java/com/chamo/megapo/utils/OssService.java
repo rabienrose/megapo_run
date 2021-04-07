@@ -21,6 +21,12 @@ import com.alibaba.sdk.android.oss.model.OSSRequest;
 import com.alibaba.sdk.android.oss.model.ObjectMetadata;
 import com.alibaba.sdk.android.oss.model.PutObjectRequest;
 import com.alibaba.sdk.android.oss.model.PutObjectResult;
+import com.chamo.megapo.model.LevelData;
+import com.chamo.megapo.model.MusicData;
+
+import org.xutils.common.Callback;
+import org.xutils.http.RequestParams;
+import org.xutils.x;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
@@ -33,9 +39,13 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 
 import static android.content.ContentValues.TAG;
+
+
 
 public class OssService {
     private static final String TAG = "OssService";
@@ -50,6 +60,10 @@ public class OssService {
     static String OSS_ACCESS_KEY_SECRET = "rxWAZnXNhiZ8nemuvshvKxceYmUCzP";
     static String OSS_ENDPOINT="https://oss-accelerate.aliyuncs.com";
     static String file_root = "/data/data/com.chamo.megapo/files/";
+    public static HashMap<Integer,LevelData> levels= new HashMap<>();
+    public static ArrayList<MusicData> musics= new ArrayList<>();
+    public static boolean level_data_ready=false;
+    public static boolean music_data_ready=false;
 
     public OssService(Context context) {
         this.context = context;
@@ -57,6 +71,78 @@ public class OssService {
         this.bucketName = BUCKET_NAME;
         this.accessKeyId = OSS_ACCESS_KEY_ID;
         this.accessKeySecret = OSS_ACCESS_KEY_SECRET;
+    }
+
+    public static void getDataMusic() {
+        RequestParams params = new RequestParams(com.chamo.megapo.utils.GlobalVariables.MUSICURl);
+        x.http().get(params, new Callback.CommonCallback<String>() {
+            @Override
+            public void onSuccess(String result) {
+                try {
+                    String[] ary = result.split("\n");
+                    for (String item : ary) {
+                        MusicData data= new MusicData();
+                        data.name=item;
+                        musics.add(data);
+                    }
+                    music_data_ready=true;
+                }catch (Exception e) {
+                    OssService.appendErr(e);
+                }
+            }
+            @Override
+            public void onError(Throwable ex, boolean isOnCallback) {
+                OssService.appendLog("fetch_music_list_err", false);
+            }
+            @Override
+            public void onCancelled(CancelledException cex) {
+                OssService.appendLog("fetch_music_list_cancel", false);
+            }
+            @Override
+            public void onFinished() {
+                OssService.appendLog("fetch_music_list_done", false);
+            }
+        });
+    }
+
+    public static void fetch_level_data(){
+        RequestParams params = new RequestParams(GlobalVariables.VIDEOURl);
+        x.http().get(params, new Callback.CommonCallback<String>() {
+            @Override
+            public void onSuccess(String result) {
+                try {
+                    String[] ary = result.split("\n");
+                    for (String item : ary) {
+
+                        String[] ay = item.split(",");
+                        LevelData data = new LevelData();
+                        data.id=Integer.parseInt(ay[0]);
+                        data.name=ay[1];
+                        data.cover=ay[2];
+                        for (int i=3; i<ay.length; i++){
+                            data.next_levs_id.add(Integer.parseInt(ay[i]));
+                        }
+                        levels.put(data.id, data);
+                    }
+                    level_data_ready=true;
+
+                }catch (Exception e) {
+                    OssService.appendErr(e);
+                }
+            }
+            @Override
+            public void onError(Throwable ex, boolean isOnCallback) {
+                OssService.appendLog("fetch_video_list_err", false);
+            }
+            @Override
+            public void onCancelled(CancelledException cex) {
+                OssService.appendLog("fetch_video_list_cancel", false);
+            }
+            @Override
+            public void onFinished() {
+                OssService.appendLog("fetch_video_list_done", false);
+            }
+        });
     }
 
     public void initOSSClient() {

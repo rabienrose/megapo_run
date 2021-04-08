@@ -17,6 +17,7 @@ import android.support.v4.content.FileProvider;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.widget.*;
 
 import com.alibaba.sdk.android.oss.internal.OSSAsyncTask;
@@ -38,6 +39,7 @@ import java.util.TimerTask;
 public class SplashActivity extends ManageActivity {
     ImageView btn;
     ImageView mMImageView;
+    TextView uuid_view;
     public static Bitmap btp;
     private Timer reset_timer = new Timer();
     int[] mGuidArray = {
@@ -115,7 +117,7 @@ public class SplashActivity extends ManageActivity {
             if (OssService.level_data_ready && OssService.music_data_ready && check_update_ready && OssService.loading_img_ready){
                 runOnUiThread(new Runnable() {
                     public void run() {
-                        btn.setVisibility(View.VISIBLE);
+//                        btn.setVisibility(View.VISIBLE);
                         jump.setVisibility(View.VISIBLE);
                     }
                 });
@@ -125,6 +127,19 @@ public class SplashActivity extends ManageActivity {
     }
 
     private void initData() {
+        RelativeLayout root=(RelativeLayout) findViewById(R.id.splash_root);
+        root.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                root.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                int w= root.getWidth();
+                int h=(int) ( root.getWidth()*1.778125);
+                RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(w, h);
+                int margin=(int)((root.getHeight() - h)/2);
+                lp.setMargins(0,margin,0,margin);
+                root.setLayoutParams(lp);
+            }
+        });
         RequestParams params = new RequestParams(GlobalVariables.CONFIGURl);
         x.http().get(params, new Callback.CommonCallback<String>() {
             @Override
@@ -149,6 +164,11 @@ public class SplashActivity extends ManageActivity {
             public void onFinished() { }
         });
         preferences = getSharedPreferences("state", MODE_PRIVATE);
+        uuid_view=(TextView) findViewById(R.id.uuid);
+        uuid_view.setVisibility(View.INVISIBLE);
+        String uuid_str = preferences.getString("uuid","");
+        uuid_str=uuid_str+" | "+GlobalVariables.APPVER;
+        uuid_view.setText(uuid_str);
         btn = (ImageView) findViewById(R.id.start);
         jump = (Button) findViewById(R.id.jump);
         btn.setVisibility(View.GONE);
@@ -170,6 +190,15 @@ public class SplashActivity extends ManageActivity {
 
             @Override
             public void onPageSelected(int position) {
+                if (position==3){
+                    uuid_view.setVisibility(View.VISIBLE);
+                    if (jump.getVisibility()==View.VISIBLE){
+                        btn.setVisibility(View.VISIBLE);
+                    }
+                }else{
+                    uuid_view.setVisibility(View.INVISIBLE);
+                    btn.setVisibility(View.GONE);
+                }
             }
 
             @Override

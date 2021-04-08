@@ -5,7 +5,6 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.SurfaceTexture;
 import android.media.AudioManager;
-import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
 import android.support.annotation.NonNull;
@@ -45,6 +44,7 @@ public class VideoPlayer extends FrameLayout {
     SharedPreferences preferences;
     private OnCompletedListener mOnCompletedListener;
     private OnPlayOrPauseListener mOnPlayOrPauseListener;
+    private long pos_on_error=-1;
 
     public VideoPlayer(Context context) {
         this(context, null);
@@ -138,125 +138,12 @@ public class VideoPlayer extends FrameLayout {
         }
     }
 
-    public void seekTo(long pos) {
-        if (pos < 0) {
-        }
-        if (mMediaPlayer != null) {
-            mMediaPlayer.seekTo(pos);
-        }
-    }
-
-    public void setVolume(int volume) {
-        if (mAudioManager != null) {
-            mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volume, 0);
-        }
-    }
-
-    public boolean isIdle() {
-        return mCurrentState == ConstantKeys.CurrentState.STATE_IDLE;
-    }
-
-    public boolean isPreparing() {
-        return mCurrentState == ConstantKeys.CurrentState.STATE_PREPARING;
-    }
-
-    public boolean isPrepared() {
-        return mCurrentState == ConstantKeys.CurrentState.STATE_PREPARED;
-    }
-
-    public boolean isBufferingPlaying() {
-        return mCurrentState == ConstantKeys.CurrentState.STATE_BUFFERING_PLAYING;
-    }
-
-    public boolean isBufferingPaused() {
-        return mCurrentState == ConstantKeys.CurrentState.STATE_BUFFERING_PAUSED;
-    }
-
-    public boolean isPlaying() {
-        return mCurrentState == ConstantKeys.CurrentState.STATE_PLAYING;
-    }
-
     public boolean isPaused() {
         return mCurrentState == ConstantKeys.CurrentState.STATE_PAUSED;
     }
 
-    public boolean isError() {
-        return mCurrentState == ConstantKeys.CurrentState.STATE_ERROR;
-    }
-
-    public boolean isCompleted() {
-        return mCurrentState == ConstantKeys.CurrentState.STATE_COMPLETED;
-    }
-
-    public int getMaxVolume() {
-        if (mAudioManager != null) {
-            return mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-        }
-        return 0;
-    }
-
-    public int getVolume() {
-        if (mAudioManager != null) {
-            return mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-        }
-        return 0;
-    }
-
-    public long getDuration() {
-        if (mMediaPlayer == null) {
-            return 0;
-        }
-        updateDurationData(mMediaPlayer.getDuration());
-        return mMediaPlayer.getDuration();
-    }
-
-    private void updateDurationData(long durationV) {
-        if (mMediaPlayer.getCurrentPosition() != 0) {
-//            int id = preferences.getInt("cur_video_ind", 0);
-//            Log.d("chamo1", "getCurrentPosition: " + mMediaPlayer.getCurrentPosition()+"  "+id);
-//            if (id == 0) {
-//                numV = allData.get(0).getNum();
-//            }else {
-//                numV = allData.get(id - 1).getNum();
-//            }
-//            //位置除以时长乘100
-//            double sum = mMediaPlayer.getCurrentPosition() / (double) durationV * 100;
-//            b = new BigDecimal(sum);
-//            double f1 = b.setScale(0, BigDecimal.ROUND_HALF_UP).doubleValue();
-//            int endNum;
-//            endNum = Integer.parseInt(new DecimalFormat("0").format(f1));
-//            if (!Empty.isEmpty(numV) && !numV.equals("0")) {
-//                endNum = endNum + Integer.parseInt(numV);
-//            }
-//            Media media = new Media();
-//            media.setId(id);
-//            media.setPercentage(endNum + "");
-//            media.setPosition(mMediaPlayer.getCurrentPosition() + "");
-//            skipToPosition=mMediaPlayer.getCurrentPosition();
-//            dbOpenHelper.update(media);
-        }
-    }
-
     public long getCurrentPosition() {
         return mMediaPlayer != null ? mMediaPlayer.getCurrentPosition() : 0;
-    }
-
-    public int getBufferPercentage() {
-        return mBufferPercentage;
-    }
-
-    public float getSpeed(float speed) {
-        if (mMediaPlayer instanceof IjkMediaPlayer) {
-            return ((IjkMediaPlayer) mMediaPlayer).getSpeed(speed);
-        }
-        return 0;
-    }
-
-    public long getTcpSpeed() {
-        if (mMediaPlayer instanceof IjkMediaPlayer) {
-            return ((IjkMediaPlayer) mMediaPlayer).getTcpSpeed();
-        }
-        return 0;
     }
 
     public int getCurrentState() {
@@ -419,11 +306,12 @@ public class VideoPlayer extends FrameLayout {
     private IMediaPlayer.OnErrorListener mOnErrorListener = new IMediaPlayer.OnErrorListener() {
         @Override
         public boolean onError(IMediaPlayer mp, int what, int extra) {
-            Log.e("chamo1","mOnErrorListener  "+what);
-            // 直播流播放时去调用mediaPlayer.getDuration会导致-38和-2147483648错误，忽略该错误
-            if (what != -38 && what != -2147483648 && extra != -38 && extra != -2147483648) {
-                mCurrentState = ConstantKeys.CurrentState.STATE_ERROR;
+            if (pos_on_error==-1){
+                pos_on_error=getCurrentPosition();
             }
+            skipToPosition=pos_on_error;
+            mCurrentState = ConstantKeys.CurrentState.STATE_ERROR;
+            restart();
             return true;
         }
     };
@@ -433,6 +321,7 @@ public class VideoPlayer extends FrameLayout {
         public boolean onInfo(IMediaPlayer mp, int what, int extra) {
             if (what == IMediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START) {
                 mCurrentState = ConstantKeys.CurrentState.STATE_PLAYING;
+                pos_on_error=-1;
                 Log.d("chamo1","MEDIA_INFO_VIDEO_RENDERING_START");
                 mOnPlayOrPauseListener.onPlayOrPauseClick(true);
             } else if (what == IMediaPlayer.MEDIA_INFO_BUFFERING_START) {

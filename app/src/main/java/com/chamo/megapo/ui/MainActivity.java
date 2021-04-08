@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -12,12 +14,17 @@ import android.hardware.SensorManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.*;
 import android.widget.*;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.DataSource;
+import com.bumptech.glide.load.engine.GlideException;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
 import com.chamo.megapo.R;
 import com.chamo.megapo.constant.ConstantKeys;
 import com.chamo.megapo.listener.OnCompletedListener;
@@ -115,7 +122,7 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
                 play();
             }else{
                 show_loading_img(true);
-                show_v_list(true);
+                show_v_list(true, true);
             }
             TimerTask update_task = new UpdatTask();
             timer.scheduleAtFixedRate(update_task, 1000, 1000);
@@ -144,7 +151,7 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
             @Override
             public void onCompleted() {
                 try {
-                    show_v_list(false);
+                    show_v_list(false, false);
                     int cur_video_id = preferences.getInt("cur_video_id",1);
                     LevelData data = OssService.levels.get(cur_video_id);
                     String cur_lev_name=data.name;
@@ -157,8 +164,6 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
                     coef_imu=coef_imu*(1/avg_s);
                     preferences.edit().putFloat("coef_imu",coef_imu).commit();
                     OssService.appendLog(end_str, false);
-                    show_v_list(false);
-
                     int count = preferences.getInt(cur_lev_name+"_count",0);
                     preferences.edit().putLong("cur_v_pos", -1).commit();
 
@@ -172,7 +177,7 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
                     count=count+1;
                     preferences.edit().putInt(cur_lev_name+"_count", count).commit();
                     OssService.fetch_a_loading_img(false);
-                    show_v_list(true);
+                    show_v_list(true, true);
                 }catch (Exception e) {
                     OssService.appendErr(e);
                 }
@@ -283,7 +288,7 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
             stats_count=0;
             videoPlayer.setUp(full_path, null);
             show_loading_img(true);
-            show_v_list(false);
+            show_v_list(false, false);
             Long cur_play_pos = preferences.getLong("cur_v_pos",0);
 
             if (!first_play) {
@@ -377,14 +382,14 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
         return (int) (pxValue / scale + 0.5f);
     }
 
-    private void show_v_list(Boolean b_show){
+    private void show_v_list(Boolean b_show, Boolean force_unlock){
         if (b_show){
             WindowManager wm = (WindowManager) this
                     .getSystemService(Context.WINDOW_SERVICE);
             int width = wm.getDefaultDisplay().getWidth();
             int height = wm.getDefaultDisplay().getHeight();
-            int item_w_px=dp2px(getApplicationContext(), 148);
-            int item_h_px=dp2px(getApplicationContext(), 200);
+            int item_w_px=dp2px(getApplicationContext(), 133);
+            int item_h_px=dp2px(getApplicationContext(), 180);
             HashMap<Integer, ArrayList<Integer>> item_sizes = new HashMap<>();
             ArrayList<Integer> s1=new ArrayList<>();
             s1.add(width/2-item_w_px/2);
@@ -449,28 +454,47 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
             }
             Log.d("chamo1","out_levs.size(): "+out_levs.size());
             boolean all_unlock=true;
+            Typeface face = Typeface.createFromAsset(getAssets(), "text.ttf");
             for (int i=0; i<out_levs.size(); i++){
                 RelativeLayout rl = (RelativeLayout)getLayoutInflater().inflate(R.layout.list_item, (ViewGroup) root_view, false);
                 rl.setId(i+1);
                 rl.setOnClickListener(this);
                 ((ViewGroup) root_view).addView(rl);
                 rl.setX(item_sizes.get(out_levs.size()).get(i));
-                rl.setY(Math.round(height/2.5)-item_h_px/2);
-
+                rl.setY(Math.round(height/3)-item_h_px/2);
+                rl.setVisibility(View.INVISIBLE);
                 for(int index = 0; index < ((ViewGroup) rl).getChildCount(); index++) {
                     View nextChild = ((ViewGroup) rl).getChildAt(index);
                     if (nextChild.getId()==R.id.image){
                         ImageView img_view=(ImageView)nextChild;
                         String image_url=GlobalVariables.COVER+out_levs.get(i).cover;
-                        Glide.with(getApplicationContext()).load(image_url).into(img_view);
+                        Glide.with(getApplicationContext()).load(image_url).listener(new RequestListener<Drawable>() {
+                            @Override
+                            public boolean onLoadFailed(@Nullable final GlideException e,
+                                                        final Object model, final Target<Drawable> target,
+                                                        final boolean isFirstResource) {
+                                return false;
+                            }
+                            @Override
+                            public boolean onResourceReady(final Drawable resource,
+                                                           final Object model,
+                                                           final Target<Drawable> target,
+                                                           final DataSource dataSource,
+                                                           final boolean isFirstResource) {
+                                img_view.setImageDrawable(resource);
+                                rl.setVisibility(View.VISIBLE);
+                                return false;
+                            }
+                        }).into(img_view);
                     }
                     if (nextChild.getId()==R.id.text){
                         TextView text_view=(TextView)nextChild;
+                        text_view.setTypeface(face);
                         String tmp_text="";
                         if (out_count.get(i)==-1){
                             tmp_text="未解锁";
                         }else{
-                            tmp_text = "完成次数： "+out_count.get(i);
+                            tmp_text = "完成次数:"+out_count.get(i);
                             all_unlock=false;
                         }
                         text_view.setText(tmp_text);
@@ -480,15 +504,14 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
                 next_level_ids.put(rl.getId(), out_levs.get(i).id);
             }
             Log.d("chamo1","out_levs  "+out_levs.get(0).name);
-            if (all_unlock){
-
+            if (all_unlock && force_unlock){
                 preferences.edit().putInt(out_levs.get(0).name+"_count",0).commit();
                 RelativeLayout rl = (RelativeLayout)level_views.get(0);
                 for(int index = 0; index < ((ViewGroup) rl).getChildCount(); index++) {
                     View nextChild = ((ViewGroup) rl).getChildAt(index);
                     if (nextChild.getId()==R.id.text){
                         TextView text_view=(TextView)nextChild;
-                        String tmp_text = "完成次数： 0";
+                        String tmp_text = "完成次数:0";
                         text_view.setText(tmp_text);
                     }
                 }
@@ -518,7 +541,7 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
                     if (count!=-1){
                         preferences.edit().putInt("cur_video_id", chosed_lev).commit();
                         preferences.edit().putLong("cur_v_pos", 0).commit();
-                        show_v_list(false);
+                        show_v_list(false, false);
                         play();
                     }
                     break;
@@ -545,14 +568,14 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
                     if (imageVideo.getVisibility() != View.GONE) {
                         flag = -1;
                         buttonAnimation(buttonItems);
-                        show_v_list(false);
+                        show_v_list(false, false);
                     }
                     break;
                 case R.id.image_video:
                     if (level_views.size()==0) {
-                        show_v_list(true);
+                        show_v_list(true, false);
                     } else {
-                        show_v_list(false);
+                        show_v_list(false, false);
                     }
                     break;
                 default:

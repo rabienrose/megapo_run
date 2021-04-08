@@ -3,7 +3,7 @@
              xmlns:tools="http://schemas.android.com/tools"
              android:layout_width="match_parent"
              android:layout_height="match_parent"
-                android:background="#4c4c4c"
+                android:background="#000000"
 >
     <RelativeLayout
             android:id="@+id/relative_layout"
@@ -14,39 +14,39 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_marginTop="-0dp"
-                android:layout_marginBottom="-0dp"/>
-        <ImageView
-                android:layout_marginRight="24dp"
-                android:layout_marginTop="24dp"
-                android:layout_marginLeft="24dp"
-                android:id="@+id/image_music"
-                android:layout_alignParentLeft="true"
-                android:background="@mipmap/music"
-                android:layout_width="40dp"
-                android:layout_height="40dp"/>
-        <ImageView
-                android:layout_below="@id/image_music"
-                android:visibility="invisible"
-                android:layout_marginRight="24dp"
-                android:layout_marginLeft="24dp"
-                android:id="@+id/image_voice"
-                android:layout_alignParentLeft="true"
-                android:background="@mipmap/voice"
-                android:layout_width="40dp"
-                android:layout_height="40dp"/>
+                android:layout_marginBottom="-0dp">
+            <ImageView
+                    android:layout_marginRight="24dp"
+                    android:layout_marginTop="24dp"
+                    android:layout_marginLeft="24dp"
+                    android:id="@+id/image_music"
+                    android:layout_alignParentLeft="true"
+                    android:background="@mipmap/music"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"/>
+            <ImageView
+                    android:layout_below="@id/image_music"
+                    android:visibility="invisible"
+                    android:layout_marginRight="24dp"
+                    android:layout_marginLeft="24dp"
+                    android:id="@+id/image_voice"
+                    android:layout_alignParentLeft="true"
+                    android:background="@mipmap/voice"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"/>
 
-        <ImageView
-            android:id="@+id/image_next"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_below="@id/image_voice"
-            android:layout_alignParentLeft="true"
-            android:layout_marginLeft="24dp"
-            android:layout_marginTop="10dp"
-            android:layout_marginRight="24dp"
-            android:background="@mipmap/next"
-            android:visibility="invisible" />
-        <ImageView
+            <ImageView
+                android:id="@+id/image_next"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_below="@id/image_voice"
+                android:layout_alignParentLeft="true"
+                android:layout_marginLeft="24dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginRight="24dp"
+                android:background="@mipmap/next"
+                android:visibility="invisible" />
+            <ImageView
                 android:layout_marginRight="24dp"
                 android:layout_marginTop="24dp"
                 android:layout_marginLeft="24dp"
@@ -57,6 +57,12 @@
                 android:layout_width="40dp"
                 android:layout_height="40dp"/>
 
+            <ImageView
+                android:id="@+id/video_loading"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone" />
+        </com.chamo.megapo.player.VideoPlayer>
     </RelativeLayout>
 
     <LinearLayout

@@ -4,15 +4,14 @@ import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
-import android.os.Handler;
 import android.os.Bundle;
-import android.os.Message;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.*;
@@ -27,7 +26,6 @@ import com.chamo.megapo.model.LevelData;
 import com.chamo.megapo.ui.base.ManageFragmentActivity;
 import com.chamo.megapo.utils.OssService;
 import com.chamo.megapo.utils.GlobalVariables;
-import com.chamo.megapo.utils.HandlerUtils;
 import com.chamo.megapo.utils.GlobalFunction;
 import com.chamo.megapo.utils.ScreenManager;
 import org.xutils.view.annotation.ContentView;
@@ -40,8 +38,6 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import okhttp3.internal.Internal;
-
 @ContentView(R.layout.activity_main)
 public class MainActivity extends ManageFragmentActivity implements View.OnClickListener, SensorEventListener {
     private long exitTime;
@@ -53,23 +49,24 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
     private float aLast = 0.0f;
     private TextView tvLog;
     private int time_count = 0;
-    private float coef = 0.09f;
-    private float f1 = 0.01f;
+    private float coef_imu = 0.1f;
+    private float f1 = 0.03f;
     private float minSpeed = 0.5f;
     private float maxSpeed = 2f;
     private ImageView imageMusic;
     private ImageView imageVideo;
     private ImageView imageVoice;
     private ImageView imageNext;
+    private ImageView loading_img;
     private View root_view;
     private List<ImageView> buttonItems = new ArrayList<ImageView>(3);
     private int flag = 1;
-    private HandlerUtils handlerUtils;
     private SharedPreferences preferences;
     private float t_imu_intense;
     private float t_speed;
     private float t_v_speed;
     private int stats_count=0;
+    private boolean first_play=true;
     private ArrayList<View> level_views=new ArrayList<>();
     private Timer timer = new Timer();
     private HashMap<Integer,Integer> next_level_ids=new HashMap<>();
@@ -86,6 +83,20 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
         }
     }
 
+    void show_loading_img(boolean b_show){
+        if (b_show){
+            Bitmap bmp = OssService.get_a_loadning_img();
+            loading_img.setImageBitmap(bmp);
+            loading_img.setVisibility(View.VISIBLE);
+            imageMusic.setVisibility(View.GONE);
+            imageVideo.setVisibility(View.GONE);
+        }else{
+            loading_img.setVisibility(View.GONE);
+            imageMusic.setVisibility(View.VISIBLE);
+            imageVideo.setVisibility(View.VISIBLE);
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -97,16 +108,22 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
             initListenter();
             int musicIndex=preferences.getInt("cur_music_id",0);
             playMusic(OssService.musics.get(musicIndex).name);
-            play(true);
+            Long cur_play_pos = preferences.getLong("cur_v_pos",0);
+            if(cur_play_pos!=-1){
+                play();
+            }else{
+                show_loading_img(true);
+                show_v_list(true);
+            }
             TimerTask update_task = new UpdatTask();
             timer.scheduleAtFixedRate(update_task, 1000, 1000);
+            coef_imu = preferences.getFloat("coef_imu",0.1f);
         }catch (Exception e) {
             OssService.appendErr(e);
         }
     }
 
     private void initData() {
-        handlerUtils = new HandlerUtils(this);
         buttonItems.add(imageVoice);
         buttonItems.add(imageNext);
         tvLog.setMovementMethod(ScrollingMovementMethod.getInstance());
@@ -125,24 +142,35 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
             @Override
             public void onCompleted() {
                 try {
+                    show_v_list(false);
                     int cur_video_id = preferences.getInt("cur_video_id",1);
+                    LevelData data = OssService.levels.get(cur_video_id);
+                    String cur_lev_name=data.name;
                     String end_str = "done_video|";
-                    end_str = end_str + OssService.levels.get(cur_video_id).name + "|";
+                    end_str = end_str +  cur_lev_name+ "|";
                     end_str = end_str + t_imu_intense / stats_count + "|";
                     end_str = end_str + t_speed / stats_count + "|";
                     end_str = end_str + t_v_speed / stats_count + "|";
+                    float avg_s=t_v_speed / stats_count;
+                    coef_imu=coef_imu*(1/avg_s);
+                    preferences.edit().putFloat("coef_imu",coef_imu).commit();
                     OssService.appendLog(end_str, false);
-                    show_v_list(true);
-                    int count = preferences.getInt(cur_video_id+"_count",0);
-                    preferences.edit().putLong("cur_v_pos", 0);
-                    LevelData data = OssService.levels.get(cur_video_id);
+                    show_v_list(false);
+
+                    int count = preferences.getInt(cur_lev_name+"_count",0);
+                    preferences.edit().putLong("cur_v_pos", -1).commit();
+
                     for (int i=0; i<data.next_levs_id.size(); i++){
                         int count1 = preferences.getInt(data.next_levs_id.get(i)+"_count",-1);
                         if (count1==-1){
-                            preferences.edit().putInt(data.next_levs_id.get(i)+"_count", 0);
+                            String next_lev_name=OssService.levels.get(data.next_levs_id.get(i)).name;
+                            preferences.edit().putInt(next_lev_name+"_count", 0).commit();
                         }
                     }
-                    preferences.edit().putInt(cur_video_id+"_count", count).commit();
+                    count=count+1;
+                    preferences.edit().putInt(cur_lev_name+"_count", count).commit();
+                    OssService.fetch_a_loading_img(false);
+                    show_v_list(true);
                 }catch (Exception e) {
                     OssService.appendErr(e);
                 }
@@ -153,8 +181,7 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
             public void onPlayOrPauseClick(boolean isPlaying) {
                 try {
                     if (isPlaying){
-                        imageMusic.setVisibility(View.VISIBLE);
-                        imageVideo.setVisibility(View.VISIBLE);
+                        show_loading_img(false);
                     }
                 }catch (Exception e) {
                     OssService.appendErr(e);
@@ -166,11 +193,25 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
     protected void initView() {
         tvLog = (TextView) findViewById(R.id.tv_log);
         videoPlayer = (VideoPlayer) findViewById(R.id.video_player);
+
+        videoPlayer.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                videoPlayer.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                int w= (int) ( videoPlayer.getHeight()*1.778125);
+                int h=videoPlayer.getHeight();
+                RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(w, h);
+                int margin=(int)((videoPlayer.getWidth() - w)/2);
+                lp.setMargins(margin,0,margin,0);
+                videoPlayer.setLayoutParams(lp);
+            }
+        });
         imageMusic = (ImageView) findViewById(R.id.image_music);
         imageVoice = (ImageView) findViewById(R.id.image_voice);
         imageNext = (ImageView) findViewById(R.id.image_next);
         imageVideo = (ImageView) findViewById(R.id.image_video);
         root_view = (View) findViewById(R.id.relative_layout);
+        loading_img=(ImageView) findViewById(R.id.video_loading);
     }
 
     private void next() {
@@ -217,15 +258,14 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
         }
     }
 
-    public void play(boolean first_play) {
+    public void play() {
         try {
             int levelIndex = preferences.getInt("cur_video_id",-1);
             if (levelIndex==-1){
-                levelIndex=4;
                 preferences.edit().putInt("cur_video_id",levelIndex).commit();
             }
             String barename = OssService.levels.get(levelIndex).name;
-            String full_path=GlobalVariables.VIDEO+barename ;
+            String full_path=GlobalVariables.VIDEO+OssService.levels.get(levelIndex).mp4 ;
             OssService.appendLog("video_start|"+barename,false);
             Long last_upload_time=preferences.getLong("last_upload",0);
             Long cur_timestamp = System.currentTimeMillis()/1000;
@@ -239,13 +279,15 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
             t_imu_intense=0;
             stats_count=0;
             videoPlayer.setUp(full_path, null);
-            imageMusic.setVisibility(View.GONE);
-            imageVideo.setVisibility(View.GONE);
+            show_loading_img(true);
             show_v_list(false);
             Long cur_play_pos = preferences.getLong("cur_v_pos",0);
-            videoPlayer.start(cur_play_pos);
+
             if (!first_play) {
                 videoPlayer.playNew();
+            }else{
+                videoPlayer.start(cur_play_pos);
+                first_play=false;
             }
         } catch (Exception e) {
             OssService.appendErr(e);
@@ -322,12 +364,6 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
 
     }
 
-    public void Event(int messageEvent) {
-        flag = -1;
-        buttonAnimation(buttonItems);
-        show_v_list(false);
-    }
-
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         return super.onTouchEvent(event);
@@ -373,7 +409,9 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
             if (data.next_levs_id.size()>3){
                 Map<String,?> keys = preferences.getAll();
                 for (int i=0; i<data.next_levs_id.size(); i++){
-                    Integer count= (Integer) keys.get(data.next_levs_id.get(i)+"_count");
+                    Integer lev_id=data.next_levs_id.get(i);
+                    Integer count= (Integer) keys.get(OssService.levels.get(lev_id).name +"_count");
+                    Log.d("chamo1",OssService.levels.get(lev_id).name +"_count"+"   "+count);
                     if (count==null){
                         out_levs.add(OssService.levels.get(data.next_levs_id.get(i)));
                         out_count.add(-1);
@@ -385,30 +423,35 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
                     }
                 }
                 Log.d("chamo1","complete_levs  "+complete_levs.size());
-                if (complete_levs.size()<=3-out_levs.size()){
-                    for (HashMap.Entry<Integer,Integer> entry : complete_levs.entrySet()){
-                        out_levs.add(OssService.levels.get(entry.getKey()));
-                        out_count.add(entry.getValue());
-                    }
-                }else{
-                    List<HashMap.Entry<Integer, Integer>> list = new ArrayList<>(complete_levs.entrySet());
-                    list.sort(HashMap.Entry.comparingByValue());
-                    for (HashMap.Entry<Integer, Integer> entry : list) {
-                        Log.d("chamo1","getKey  "+entry.getKey()+"  "+entry.getValue());
-                        out_levs.add(OssService.levels.get(entry.getKey()));
-                        out_count.add(entry.getValue());
-                        if (out_levs.size()==3){
-                            break;
+                if (out_levs.size()<3){
+                    if (complete_levs.size()<=3-out_levs.size()){
+                        for (HashMap.Entry<Integer,Integer> entry : complete_levs.entrySet()){
+                            out_levs.add(OssService.levels.get(entry.getKey()));
+                            out_count.add(entry.getValue());
+                        }
+                    }else{
+                        List<HashMap.Entry<Integer, Integer>> list = new ArrayList<>(complete_levs.entrySet());
+                        list.sort(HashMap.Entry.comparingByValue());
+                        for (HashMap.Entry<Integer, Integer> entry : list) {
+                            Log.d("chamo1","getKey  "+entry.getKey()+"  "+entry.getValue());
+                            out_levs.add(OssService.levels.get(entry.getKey()));
+                            out_count.add(entry.getValue());
+                            if (out_levs.size()==3){
+                                break;
+                            }
                         }
                     }
                 }
             }else{
                 for (int i=0; i<data.next_levs_id.size(); i++){
-                    out_levs.add(OssService.levels.get(data.next_levs_id.get(i)));
-                    out_count.add(-1);
+                    LevelData data_n=OssService.levels.get(data.next_levs_id.get(i));
+                    out_levs.add(data_n);
+                    int lev_count = preferences.getInt(data_n.name+"_count",-1);
+                    out_count.add(lev_count);
                 }
             }
             Log.d("chamo1","out_levs.size(): "+out_levs.size());
+            boolean all_unlock=true;
             for (int i=0; i<out_levs.size(); i++){
                 RelativeLayout rl = (RelativeLayout)getLayoutInflater().inflate(R.layout.list_item, (ViewGroup) root_view, false);
                 rl.setId(i+1);
@@ -416,6 +459,7 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
                 ((ViewGroup) root_view).addView(rl);
                 rl.setX(item_sizes.get(out_levs.size()).get(i));
                 rl.setY(Math.round(height/2.5)-item_h_px/2);
+
                 for(int index = 0; index < ((ViewGroup) rl).getChildCount(); index++) {
                     View nextChild = ((ViewGroup) rl).getChildAt(index);
                     if (nextChild.getId()==R.id.image){
@@ -430,12 +474,27 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
                             tmp_text="未解锁";
                         }else{
                             tmp_text = "完成次数： "+out_count.get(i);
+                            all_unlock=false;
                         }
                         text_view.setText(tmp_text);
                     }
                 }
                 level_views.add(rl);
                 next_level_ids.put(rl.getId(), out_levs.get(i).id);
+            }
+            Log.d("chamo1","out_levs  "+out_levs.get(0).name);
+            if (all_unlock){
+
+                preferences.edit().putInt(out_levs.get(0).name+"_count",0).commit();
+                RelativeLayout rl = (RelativeLayout)level_views.get(0);
+                for(int index = 0; index < ((ViewGroup) rl).getChildCount(); index++) {
+                    View nextChild = ((ViewGroup) rl).getChildAt(index);
+                    if (nextChild.getId()==R.id.text){
+                        TextView text_view=(TextView)nextChild;
+                        String tmp_text = "完成次数： 0";
+                        text_view.setText(tmp_text);
+                    }
+                }
             }
         }else{
             if (level_views.size()>0){
@@ -450,18 +509,20 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
     @Override
     public void onClick(View v) {
         try {
+
             switch (v.getId()) {
                 case 1:
                 case 2:
                 case 3:
-                    int video_id = preferences.getInt("cur_video_id",0);
-                    LevelData data = OssService.levels.get(video_id);
-                    int count = preferences.getInt(video_id+"_count",-1);
+                    int chosed_lev=next_level_ids.get(v.getId());
+                    LevelData data = OssService.levels.get(chosed_lev);
+                    int count = preferences.getInt(data.name+"_count",-1);
+
                     if (count!=-1){
-                        int tmp_lev_id=next_level_ids.get(v.getId());
-                        int chosed_lev = data.next_levs_id.get(tmp_lev_id);
                         preferences.edit().putInt("cur_video_id", chosed_lev).commit();
+                        preferences.edit().putLong("cur_v_pos", 0).commit();
                         show_v_list(false);
+                        play();
                     }
                     break;
                 case R.id.image_music:
@@ -484,7 +545,11 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
                     next();
                     break;
                 case R.id.video_player:
-                    Event(0);
+                    if (imageVideo.getVisibility() != View.GONE) {
+                        flag = -1;
+                        buttonAnimation(buttonItems);
+                        show_v_list(false);
+                    }
                     break;
                 case R.id.image_video:
                     if (level_views.size()==0) {
@@ -504,6 +569,10 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
     @Override
     public void onSensorChanged(SensorEvent event) {
         try {
+            if (videoPlayer.getCurrentState()==ConstantKeys.CurrentState.STATE_PLAYING){
+            }else{
+                return;
+            }
             time_count = time_count + 1;
             float ax = event.values[0];
             float ay = event.values[1];
@@ -511,13 +580,14 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
             float intense = (float) Math.sqrt(ax * ax + ay * ay + az * az);
             float f2 = 1 - f1;
             float aCur = intense * f1 + aLast * f2;
-            float videoPlaySpd = aCur * coef;
+            float videoPlaySpd = aCur * coef_imu;
 
             aLast = aCur;
             if (time_count > 50) {
                 stats_count = stats_count + 1;
                 t_imu_intense = t_imu_intense + intense;
                 t_speed = t_speed + videoPlaySpd;
+                videoPlaySpd=3;
                 if (videoPlaySpd < minSpeed) {
                     videoPlayer.pause();
                 } else {

@@ -58,6 +58,8 @@ public class SplashActivity extends ManageActivity {
             x.view().inject(this);
             initData();
             initListener();
+//            preferences.edit().putInt("denmark_koben_path_0_count",0).commit();
+
         }catch (Exception e) {
             OssService.appendErr(e);
         }
@@ -112,7 +114,7 @@ public class SplashActivity extends ManageActivity {
 
     class UpdateResetTask extends TimerTask {
         public void run() {
-            if (OssService.level_data_ready && OssService.music_data_ready && check_update_ready){
+            if (OssService.level_data_ready && OssService.music_data_ready && check_update_ready && OssService.loading_img_ready){
                 runOnUiThread(new Runnable() {
                     public void run() {
                         btn.setVisibility(View.VISIBLE);
@@ -158,6 +160,7 @@ public class SplashActivity extends ManageActivity {
         mGuidViewPager = findViewById(R.id.guid_viewPager);
         mGuidViewPager.setAdapter(new GuidPagerAdapter(mGuidArray,SplashActivity.this, mMImageView, btp));
         TimerTask updateReset = new UpdateResetTask();
+        OssService.fetch_a_loading_img(true);
         reset_timer.scheduleAtFixedRate(updateReset, 500, 500);
     }
 

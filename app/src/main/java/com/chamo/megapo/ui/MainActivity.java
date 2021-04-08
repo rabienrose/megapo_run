@@ -163,9 +163,9 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
                     preferences.edit().putLong("cur_v_pos", -1).commit();
 
                     for (int i=0; i<data.next_levs_id.size(); i++){
-                        int count1 = preferences.getInt(data.next_levs_id.get(i)+"_count",-1);
+                        String next_lev_name=OssService.levels.get(data.next_levs_id.get(i)).name;
+                        int count1 = preferences.getInt(next_lev_name+"_count",-1);
                         if (count1==-1){
-                            String next_lev_name=OssService.levels.get(data.next_levs_id.get(i)).name;
                             preferences.edit().putInt(next_lev_name+"_count", 0).commit();
                         }
                     }
@@ -264,6 +264,7 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
         try {
             int levelIndex = preferences.getInt("cur_video_id",-1);
             if (levelIndex==-1){
+                levelIndex=1;
                 preferences.edit().putInt("cur_video_id",levelIndex).commit();
             }
             String barename = OssService.levels.get(levelIndex).name;
@@ -350,16 +351,10 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
             return;
         }
         for (int i = 0; i < buttonList.size(); i++) {
-            ObjectAnimator objAnimatorY;
             ObjectAnimator objAnimatorRotate;
             buttonList.get(i).setVisibility(View.VISIBLE);
-            objAnimatorY = ObjectAnimator.ofFloat(buttonList.get(i), "y", buttonList.get(i).getY() + 0, buttonList.get(i).getY() + 10);
-            objAnimatorY.setDuration(200);
-            objAnimatorY.setStartDelay(100);
-            objAnimatorY.start();
             objAnimatorRotate = ObjectAnimator.ofFloat(buttonList.get(i), "rotation", 0, 360);
             objAnimatorRotate.setDuration(200);
-            objAnimatorY.setStartDelay(100);
             objAnimatorRotate.start();
             flag = -1;
         }

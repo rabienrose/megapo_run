@@ -16,33 +16,33 @@
                 android:layout_marginTop="-0dp"
                 android:layout_marginBottom="-0dp">
             <ImageView
-                    android:layout_marginRight="24dp"
-                    android:layout_marginTop="24dp"
-                    android:layout_marginLeft="24dp"
-                    android:id="@+id/image_music"
-                    android:layout_alignParentLeft="true"
-                    android:background="@mipmap/music"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"/>
+                android:layout_marginRight="24dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginLeft="24dp"
+                android:id="@+id/image_music"
+                android:layout_alignParentLeft="true"
+                android:background="@mipmap/music"
+                android:layout_width="50dp"
+                android:layout_height="50dp"/>
+
             <ImageView
-                    android:layout_below="@id/image_music"
-                    android:visibility="invisible"
-                    android:layout_marginRight="24dp"
-                    android:layout_marginLeft="24dp"
-                    android:id="@+id/image_voice"
-                    android:layout_alignParentLeft="true"
-                    android:background="@mipmap/voice"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"/>
+                android:id="@+id/image_voice"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_alignParentLeft="true"
+                android:layout_marginLeft="24dp"
+                android:layout_marginRight="24dp"
+                android:layout_marginTop="80dp"
+                android:background="@mipmap/voice"
+                android:visibility="invisible" />
 
             <ImageView
                 android:id="@+id/image_next"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_below="@id/image_voice"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
                 android:layout_alignParentLeft="true"
                 android:layout_marginLeft="24dp"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="140dp"
                 android:layout_marginRight="24dp"
                 android:background="@mipmap/next"
                 android:visibility="invisible" />
@@ -54,8 +54,8 @@
                 android:layout_alignParentRight="true"
                 android:layout_gravity="right"
                 android:background="@mipmap/video"
-                android:layout_width="40dp"
-                android:layout_height="40dp"/>
+                android:layout_width="50dp"
+                android:layout_height="50dp"/>
 
             <ImageView
                 android:id="@+id/video_loading"

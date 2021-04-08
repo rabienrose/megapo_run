@@ -58,8 +58,6 @@ public class SplashActivity extends ManageActivity {
             x.view().inject(this);
             initData();
             initListener();
-//            preferences.edit().putInt("denmark_koben_path_0_count",0).commit();
-
         }catch (Exception e) {
             OssService.appendErr(e);
         }

@@ -27,10 +27,12 @@ import com.chamo.megapo.ui.base.ManageFragmentActivity;
 import com.chamo.megapo.utils.OssService;
 import com.chamo.megapo.utils.GlobalVariables;
 import com.chamo.megapo.utils.GlobalFunction;
-import com.chamo.megapo.utils.ScreenManager;
+
 import org.xutils.view.annotation.ContentView;
 import org.xutils.x;
 import com.chamo.megapo.player.VideoPlayer;
+import com.chamo.megapo.utils.ScreenManager;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

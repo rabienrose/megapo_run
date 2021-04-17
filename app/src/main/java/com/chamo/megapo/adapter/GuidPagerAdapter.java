@@ -4,13 +4,18 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.support.v4.view.PagerAdapter;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.TextView;
+
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.chamo.megapo.R;
 import com.yanzhenjie.nohttp.Logger;
+
+import org.w3c.dom.Text;
 
 import java.io.InputStream;
 
@@ -18,6 +23,7 @@ public class GuidPagerAdapter extends PagerAdapter {
     private int mGuidArray[];
     private Context mContext;
     private ImageView mMImageView;
+    private TextView uuid;
     private Bitmap btp;
 
     public GuidPagerAdapter(int[] mGuidArray, Context mContext, ImageView mMImageView, Bitmap btp) {

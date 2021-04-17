@@ -1,13 +1,9 @@
 package com.chamo.megapo;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
-import android.net.Uri;
 import android.support.multidex.MultiDexApplication;
 import android.util.DisplayMetrics;
-import android.util.Log;
-import com.chamo.megapo.cache.DoubleLruCache;
-import com.chamo.megapo.utils.CrashHandler;
+
 import com.chamo.megapo.utils.GlobalVariables;
 import com.chamo.megapo.utils.OssService;
 import com.richard.tool.database.BaseModelManager;
@@ -31,8 +27,6 @@ public class MyApp extends MultiDexApplication {
     @Override
     public void onCreate() {
         super.onCreate();
-        CrashHandler crashHandler = CrashHandler.getInstance();
-        crashHandler.init(this);
         x.Ext.init(this);
         x.Ext.setDebug(BuildConfig.DEBUG); // 是否输出debug日志, 开启debug会影响性能.
         mContext = getApplicationContext();
@@ -40,15 +34,14 @@ public class MyApp extends MultiDexApplication {
         initScreenSize();
         NoHttp.initialize(this); // NoHttp默认初始化。
         BaseModelManager.currentUser = "megapo";
-        DoubleLruCache.getInstance(this);
         SharedPreferences user_data = getSharedPreferences("state", MODE_PRIVATE);
         String uuid=user_data.getString("uuid","");
         if (uuid!=""){
-            OssService.appendLog("login|"+ GlobalVariables.APPVER,false);
+            OssService.appendLog("login", GlobalVariables.APPVER+"",false);
         }else{
             String id = UUID.randomUUID().toString();
             user_data.edit().putString("uuid",id).commit();
-            OssService.appendLog("first_login|"+ GlobalVariables.APPVER,false);
+            OssService.appendLog("first_login",GlobalVariables.APPVER+"",false);
         }
     }
 

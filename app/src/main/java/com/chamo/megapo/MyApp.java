@@ -37,11 +37,11 @@ public class MyApp extends MultiDexApplication {
         SharedPreferences user_data = getSharedPreferences("state", MODE_PRIVATE);
         String uuid=user_data.getString("uuid","");
         if (uuid!=""){
-            OssService.appendLog("login|"+ GlobalVariables.APPVER,false);
+            OssService.appendLog("login", GlobalVariables.APPVER+"",false);
         }else{
             String id = UUID.randomUUID().toString();
             user_data.edit().putString("uuid",id).commit();
-            OssService.appendLog("first_login|"+ GlobalVariables.APPVER,false);
+            OssService.appendLog("first_login",GlobalVariables.APPVER+"",false);
         }
     }
 

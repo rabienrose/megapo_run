@@ -30,6 +30,7 @@ import com.chamo.megapo.constant.ConstantKeys;
 import com.chamo.megapo.listener.OnCompletedListener;
 import com.chamo.megapo.listener.OnPlayOrPauseListener;
 import com.chamo.megapo.model.LevelData;
+import com.chamo.megapo.model.MusicData;
 import com.chamo.megapo.ui.base.ManageFragmentActivity;
 import com.chamo.megapo.utils.OssService;
 import com.chamo.megapo.utils.GlobalVariables;
@@ -116,7 +117,14 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
             initData();
             initListenter();
             int musicIndex=preferences.getInt("cur_music_id",0);
-            playMusic(OssService.musics.get(musicIndex).name);
+            MusicData music_data=null;
+            try{
+                music_data = OssService.musics.get(musicIndex);
+            }catch (Exception e) {
+                music_data = OssService.musics.get(0);
+                preferences.edit().putInt("cur_music_id", 0).commit();
+            }
+            playMusic(music_data.name);
             Long cur_play_pos = preferences.getLong("cur_v_pos",0);
             if(cur_play_pos!=-1){
                 play();
@@ -153,9 +161,15 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
                 try {
                     show_v_list(false, false);
                     int cur_video_id = preferences.getInt("cur_video_id",1);
-                    LevelData data = OssService.levels.get(cur_video_id);
+                    LevelData data=null;
+                    try{
+                        data = OssService.levels.get(cur_video_id);
+                    }catch (Exception e) {
+                        preferences.edit().putInt("cur_video_id", 1).commit();
+                        data = OssService.levels.get(1);
+                    }
                     String cur_lev_name=data.name;
-                    String end_str = "done_video|";
+                    String end_str = "";
                     end_str = end_str +  cur_lev_name+ "|";
                     end_str = end_str + t_imu_intense / stats_count + "|";
                     end_str = end_str + t_speed / stats_count + "|";
@@ -163,7 +177,7 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
                     float avg_s=t_v_speed / stats_count;
                     coef_imu=coef_imu*(1/avg_s);
                     preferences.edit().putFloat("coef_imu",coef_imu).commit();
-                    OssService.appendLog(end_str, false);
+                    OssService.appendLog("done_video", end_str, false);
                     int count = preferences.getInt(cur_lev_name+"_count",0);
                     preferences.edit().putLong("cur_v_pos", -1).commit();
 
@@ -272,9 +286,16 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
                 levelIndex=1;
                 preferences.edit().putInt("cur_video_id",levelIndex).commit();
             }
-            String barename = OssService.levels.get(levelIndex).name;
-            String full_path=GlobalVariables.VIDEO+OssService.levels.get(levelIndex).mp4 ;
-            OssService.appendLog("video_start|"+barename,false);
+            LevelData data=null;
+            try{
+                data = OssService.levels.get(levelIndex);
+            }catch (Exception e) {
+                data = OssService.levels.get(1);
+                preferences.edit().putInt("cur_video_id", 1).commit();
+            }
+            String barename = data.name;
+            String full_path=GlobalVariables.VIDEO+data.mp4 ;
+            OssService.appendLog("video_start",barename,false);
             Long last_upload_time=preferences.getLong("last_upload",0);
             Long cur_timestamp = System.currentTimeMillis()/1000;
             if ((cur_timestamp - last_upload_time)>3600*24){
@@ -404,7 +425,14 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
             s3.add(width/2+item_w_px/2);
             item_sizes.put(3,s3);
             int cur_video_id = preferences.getInt("cur_video_id",1);
-            LevelData data = OssService.levels.get(cur_video_id);
+            LevelData data=null;
+            try{
+                data = OssService.levels.get(cur_video_id);
+            }catch (Exception e) {
+                data = OssService.levels.get(1);
+                preferences.edit().putInt("cur_video_id", 1).commit();
+            }
+
             ArrayList<LevelData> out_levs=new ArrayList<>();
             ArrayList<Integer> out_count=new ArrayList<>();
             HashMap<Integer,Integer> complete_levs=new HashMap<>();
@@ -589,7 +617,7 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
     @Override
     public void onSensorChanged(SensorEvent event) {
         try {
-            if (videoPlayer.getCurrentState()==ConstantKeys.CurrentState.STATE_PLAYING){
+            if (videoPlayer.getCurrentState()==ConstantKeys.CurrentState.STATE_PLAYING || videoPlayer.getCurrentState()==ConstantKeys.CurrentState.STATE_PAUSED){
             }else{
                 return;
             }
@@ -607,7 +635,7 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
                 stats_count = stats_count + 1;
                 t_imu_intense = t_imu_intense + intense;
                 t_speed = t_speed + videoPlaySpd;
-                videoPlaySpd=3;
+//                videoPlaySpd=3;
                 if (videoPlaySpd < minSpeed) {
                     videoPlayer.pause();
                 } else {
@@ -624,7 +652,7 @@ public class MainActivity extends ManageFragmentActivity implements View.OnClick
                 }
                 t_v_speed = t_v_speed + videoPlaySpd;
                 String log = "speed=" + videoPlaySpd;
-                Log.d("chamo", log);
+                Log.d("chamo1", log);
                 tvLog.setText(log);
                 time_count = 0;
             }

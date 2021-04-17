@@ -1,7 +1,7 @@
 package com.chamo.megapo.utils;
 
 public class GlobalVariables {
-	public final static int APPVER = 10001;
+	public final static int APPVER = 10101;
 	public final static String APPAPK ="megapo.apk";
 	public final static String APPOSS ="https://ride-v.oss-accelerate.aliyuncs.com/download/"+APPAPK;
 	public final static String ROOT_PATH = android.os.Environment.getExternalStorageDirectory() + "/com.chamo.megapo/";

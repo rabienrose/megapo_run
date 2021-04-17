@@ -52,6 +52,7 @@ public class SplashActivity extends ManageActivity {
     private ViewPager mGuidViewPager;
     private Button jump;
     private boolean check_update_ready=false;
+    private boolean in_downloading=false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -114,7 +115,7 @@ public class SplashActivity extends ManageActivity {
 
     class UpdateResetTask extends TimerTask {
         public void run() {
-            if (OssService.level_data_ready && OssService.music_data_ready && check_update_ready && OssService.loading_img_ready){
+            if (OssService.level_data_ready && OssService.music_data_ready && check_update_ready && OssService.loading_img_ready &&in_downloading==false){
                 runOnUiThread(new Runnable() {
                     public void run() {
 //                        btn.setVisibility(View.VISIBLE);
@@ -151,8 +152,9 @@ public class SplashActivity extends ManageActivity {
                     GlobalFunction.showToast("更新软件中");
                     btn.setVisibility(View.GONE);
                     jump.setVisibility(View.GONE);
+                    in_downloading=true;
                     downloadUpdate();
-                    OssService.appendLog("start_download_app|"+GlobalVariables.APPVER+"|"+force_ver_id, false);
+                    OssService.appendLog("start_download_app",GlobalVariables.APPVER+"|"+force_ver_id, false);
                 }
                 check_update_ready=true;
             }

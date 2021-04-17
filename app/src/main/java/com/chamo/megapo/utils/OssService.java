@@ -154,15 +154,15 @@ public class OssService {
             }
             @Override
             public void onError(Throwable ex, boolean isOnCallback) {
-                OssService.appendLog("fetch_music_list_err", false);
+                OssService.appendLog("fetch_music_list_err", "",false);
             }
             @Override
             public void onCancelled(CancelledException cex) {
-                OssService.appendLog("fetch_music_list_cancel", false);
+                OssService.appendLog("fetch_music_list_cancel", "",false);
             }
             @Override
             public void onFinished() {
-                OssService.appendLog("fetch_music_list_done", false);
+                OssService.appendLog("fetch_music_list_done","", false);
             }
         });
     }
@@ -195,15 +195,15 @@ public class OssService {
             }
             @Override
             public void onError(Throwable ex, boolean isOnCallback) {
-                OssService.appendLog("fetch_video_list_err", false);
+                OssService.appendLog("fetch_video_list_err", "",false);
             }
             @Override
             public void onCancelled(CancelledException cex) {
-                OssService.appendLog("fetch_video_list_cancel", false);
+                OssService.appendLog("fetch_video_list_cancel", "",false);
             }
             @Override
             public void onFinished() {
-                OssService.appendLog("fetch_video_list_done", false);
+                OssService.appendLog("fetch_video_list_done", "",false);
             }
         });
     }
@@ -219,7 +219,7 @@ public class OssService {
     }
 
     public static void upload_file(Context context, String uuid){
-        appendLog("upload_log",false);
+        appendLog("upload_log","",false);
         Date date = new Date();
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
         String strDate = formatter.format(date);
@@ -235,11 +235,11 @@ public class OssService {
         PrintWriter pw = new PrintWriter(sw);
         e.printStackTrace(pw);
         String sStackTrace = sw.toString(); // stack trace as a string
-        appendLog(sStackTrace,false);
+        appendLog("crash",sStackTrace,false);
         e.printStackTrace();
     }
 
-    static public void appendLog(String text, boolean b_new)
+    static public void appendLog(String key, String text, boolean b_new)
     {
         File folder1 = new File(file_root);
         if (!folder1.exists()){
@@ -248,7 +248,7 @@ public class OssService {
         Date date = new Date();
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
         String strDate = formatter.format(date);
-        text="["+strDate+"]"+text;
+        text="["+strDate+"]"+key+"|"+text;
         File logFile = new File(file_root+"/chamo.txt");
 
         if (!logFile.exists()) {
@@ -286,7 +286,7 @@ public class OssService {
         OSSAsyncTask task = oss.asyncPutObject(put, new OSSCompletedCallback<PutObjectRequest, PutObjectResult>() {
             @Override
             public void onSuccess(PutObjectRequest request, PutObjectResult result) {
-                appendLog("new_log",true);
+                appendLog("new_log","",true);
             }
 
             @Override
